@@ -138,6 +138,9 @@
     %type <formals> formal_list
     %type <formal> formal
     %type <expression> expression
+    %type <expression> static_dispatch
+    %type <expression> dispatch
+    %type <expressions> expression_list
 
 
     /* Precedence declarations go here. */
@@ -174,10 +177,20 @@
     | feature_list feature
     { $$ = append_Features($1,  single_Features($2)); }
 
-    /* TODO : complete it*/
     feature
     : OBJECTID '(' formal_list ')' ':' TYPEID '{'expression'}'
     {
+      $$ = method($1, $3, $6, $8);
+    }
+    |
+    OBJECTID ':' TYPEID 
+    {
+      $$ = attr($1, $3, no_expr());
+    }
+    |
+    OBJECTID ':' TYPEID "<-" expression
+    {
+      $$ = attr($1, $3, $5);
     }
 
     formal_list
@@ -189,12 +202,34 @@
     formal
     : OBJECTID ':' TYPEID { $$ = formal($1, $3); }
 
-    expression
-    : "true"
-    {
-        
+    static_dispatch
+    : expression '@' TYPEID '.' OBJECTID '(' expression_list ')'{
+      $$ = static_dispatch($1, $3, $5, $7);
     }
 
+    dispatch
+    : expression '.' OBJECTID '(' expression_list ')'{
+      $$ = dispatch($1, $3, $5);
+    }
+
+    expression_list
+    : expression
+    {
+      $$ = single_Expressions($1);
+    }
+    | expression_list ',' expression
+    { $$ = append_Expressions($1, single_Expressions($3)); }
+
+    /* TODO : complete it*/
+    expression
+    : OBJECTID "<-" expression 
+    {
+       $$ = assign($1, $3); 
+    }
+    | static_dispatch
+    | dispatch
+    | "true"
+    
 
     
     /* end of grammar */
