@@ -141,12 +141,15 @@
     %type <expression> static_dispatch_exp
     %type <expression> dispatch_exp
     %type <expressions> expression_list
-
-
+    %type <expression> if_stmt;
+    %type <expression> while_loop;
+    %type <expression> block_stmt;
+    %type <expression> let_stmt;
+    %type <expression> letsub;
+    %type <case_> case;
+    %type <cases> case_list;
+    %type <expression> case_stmt;
     /* Precedence declarations go here. */
-
-
-
     %%
     /* 
     Save the root of the abstract syntax tree in a global variable.
@@ -212,7 +215,7 @@
       $$ = dispatch($1, $3, $5);
     }
     | OBJECTID '('expression_list')' {
-      $$ = dispatch(stringtable.add_string("self"), $1, $3)
+      $$ = dispatch(object(stringtable.add_string("self")), $1, $3);
     }
 
     expression_list
@@ -223,6 +226,56 @@
     | expression_list ',' expression
     { $$ = append_Expressions($1, single_Expressions($3)); }
 
+    if_stmt
+    :"if" expression "then" expression "else" expression "fi" {
+      $$ = cond($2, $4, $6);
+    }
+
+    while_loop
+    : "while" expression "loop" expression "pool"{
+      $$ = loop($2, $4);
+    }
+
+    block_stmt
+    : '{'expression_list'}' {
+      $$ = block($2);
+    }
+
+    let_stmt
+    : "let" letsub{
+      $$ = $2;
+    }
+
+    letsub
+    :OBJECTID ':' TYPEID "<-" expression "in" expression {
+      $$ = let($1, $3, $5, $7);
+    }
+    |OBJECTID ':' TYPEID "in" expression {
+      $$ = let($1, $3, no_expr(), $5);
+    }
+    |OBJECTID ':' TYPEID "<" expression ',' letsub {
+      $$ = let($1, $3, $5, $7);
+    }
+    |OBJECTID ':' TYPEID ',' letsub {
+      $$ = let($1, $3, no_expr(), $5);
+    }
+
+    case_stmt
+    :"case" expression "of" case_list "esac" {
+      $$ = typcase($2, $4);
+    }
+
+    case_list
+    : case
+    { $$ = single_Cases($1); }
+    | case_list ';' case
+    { $$ = append_Cases($1, single_Cases($3)); }
+
+    case
+    : OBJECTID ':'  TYPEID "=>" expression {
+      $$ = branch($1, $3, $5);
+    }
+
     /* TODO : complete it*/
     expression
     : OBJECTID "<-" expression 
@@ -231,8 +284,62 @@
     }
     | static_dispatch_exp
     | dispatch_exp
-    | "true"{
+    | if_stmt
+    | while_loop
+    | block_stmt
+    | let_stmt
+    | case_stmt
+    | "new" TYPEID {
+      $$ = new_($2);
     }
+    | "isvoid" expression {
+      $$ = isvoid($2);
+    }
+    | expression "+" expression {
+      $$ = plus($1,$3);
+    }
+    | expression "-" expression {
+      $$ = sub($1,$3);
+    }
+    | expression "*" expression {
+      $$ = mul($1,$3);
+    }
+    | expression "/" expression {
+      $$ = divide($1,$3);
+    }
+    | '~'expression {
+
+      $$ = comp($2);
+    }
+    | expression '<' expression {
+      $$ = lt($1,$3);
+    }
+    | expression "<=" expression {
+      $$ = leq($1,$3);
+    }
+    | expression '=' expression {
+      $$ = eq($1,$3);
+    }
+    | "not" expression {
+      $$ = neg($2);
+    }
+    | '('expression')' {
+      $$ = $2;
+    }
+    | OBJECTID {
+      $$ = object($1);
+    }
+    | INT_CONST {
+      $$ = object($1);
+    }
+    | STR_CONST {
+      $$ = object($1);
+    }
+    | BOOL_CONST{
+      $$ = bool_const($1);
+    }
+
+
     
 
     
