@@ -138,8 +138,8 @@
     %type <formals> formal_list
     %type <formal> formal
     %type <expression> expression
-    %type <expression> static_dispatch
-    %type <expression> dispatch
+    %type <expression> static_dispatch_exp
+    %type <expression> dispatch_exp
     %type <expressions> expression_list
 
 
@@ -202,14 +202,17 @@
     formal
     : OBJECTID ':' TYPEID { $$ = formal($1, $3); }
 
-    static_dispatch
+    static_dispatch_exp
     : expression '@' TYPEID '.' OBJECTID '(' expression_list ')'{
       $$ = static_dispatch($1, $3, $5, $7);
     }
 
-    dispatch
+    dispatch_exp
     : expression '.' OBJECTID '(' expression_list ')'{
       $$ = dispatch($1, $3, $5);
+    }
+    | OBJECTID '('expression_list')' {
+      $$ = dispatch(stringtable.add_string("self"), $1, $3)
     }
 
     expression_list
@@ -226,9 +229,10 @@
     {
        $$ = assign($1, $3); 
     }
-    | static_dispatch
-    | dispatch
-    | "true"
+    | static_dispatch_exp
+    | dispatch_exp
+    | "true"{
+    }
     
 
     
