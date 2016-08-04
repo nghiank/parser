@@ -5,9 +5,11 @@
 */
 %{
   #include <iostream>
+  #include <stdio.h>
   #include "cool-tree.h"
   #include "stringtab.h"
   #include "utilities.h"
+  #define YYDEBUG 1
   
   extern char *curr_filename;
   
@@ -150,6 +152,17 @@
     %type <cases> case_list;
     %type <expression> case_stmt;
     /* Precedence declarations go here. */
+
+    %precedence "<-"
+    %precedence NOT
+    %left '<' "<=" '='
+    %left '-' '+'
+    %left '*' '/'
+    %precedence ISVOID
+    %precedence '~'
+    %precedence '@'
+    %precedence '.'
+
     %%
     /* 
     Save the root of the abstract syntax tree in a global variable.
@@ -159,7 +172,7 @@
     
     class_list
     : class			/* single class */
-    { $$ = single_Classes($1);
+    { yydebug = 1;$$ = single_Classes($1);
     parse_results = $$; }
     | class_list class	/* several classes */
     { $$ = append_Classes($1,single_Classes($2)); 
