@@ -5,11 +5,9 @@
 */
 %{
   #include <iostream>
-  #include <stdio.h>
   #include "cool-tree.h"
   #include "stringtab.h"
   #include "utilities.h"
-  #define YYDEBUG 1
   
   extern char *curr_filename;
   
@@ -87,6 +85,12 @@
     int omerrs = 0;               /* number of errors in lexing and parsing */
     %}
     
+    /* Generate the parser description file.  */
+    %verbose
+
+    /* Formatting semantic values.  */
+    %printer { fprintf (yyoutput, "%s()", $$->get_string());  } OBJECTID;
+
     /* A union of all the types that can be the result of parsing actions. */
     %union {
       Boolean boolean;
@@ -121,7 +125,7 @@
     %token CASE 269 ESAC 270 OF 271 DARROW 272 NEW 273 ISVOID 274
     %token <symbol>  STR_CONST 275 INT_CONST 276 
     %token <boolean> BOOL_CONST 277
-    %token <symbol>  TYPEID 278 OBJECTID
+    %token <symbol>  TYPEID 278 OBJECTID 279
     %token ASSIGN 280 NOT 281 LE 282 ERROR 283
     
     /*  DON'T CHANGE ANYTHING ABOVE THIS LINE, OR YOUR PARSER WONT WORK       */
@@ -171,8 +175,8 @@
     ;
     
     class_list
-    : class			/* single class */
-    { yydebug = 1;$$ = single_Classes($1);
+    : class/* single class */
+    { $$ = single_Classes($1);
     parse_results = $$; }
     | class_list class	/* several classes */
     { $$ = append_Classes($1,single_Classes($2)); 
@@ -180,23 +184,36 @@
     ;
     
     /* If no parent is specified, the class inherits from the Object class. */
-    class	: CLASS TYPEID '{' feature_list '}' ';'
+    class: CLASS TYPEID '{' feature_list '}' ';'
     { $$ = class_($2,idtable.add_string("Object"),$4,
     stringtable.add_string(curr_filename)); }
     | CLASS TYPEID INHERITS TYPEID '{' feature_list '}' ';'
     { $$ = class_($2,$4,$6,stringtable.add_string(curr_filename)); }
+    | CLASS TYPEID '{' '}' ';'{
+      $$ = class_($2,idtable.add_string("Object"), nil_Features(), 
+      stringtable.add_string(curr_filename));
+    }
+    | CLASS TYPEID INHERITS TYPEID '{'  '}' ';' {
+      $$ = class_($2,$4,nil_Features(),stringtable.add_string(curr_filename));
+    }
     ;
     
     feature_list
-    : feature
+    : feature ';'
     { $$ = single_Features($1); }
-    | feature_list feature
+    | feature_list feature ';'
     { $$ = append_Features($1,  single_Features($2)); }
+    ;
 
     feature
-    : OBJECTID '(' formal_list ')' ':' TYPEID '{'expression'}'
+    : OBJECTID '(' formal_list ')' ':' TYPEID '{' expression '}'
     {
       $$ = method($1, $3, $6, $8);
+    }
+    |
+    OBJECTID '('  ')' ':' TYPEID '{' expression '}'
+    {
+      $$ = method($1, nil_Formals(), $5, $7);
     }
     |
     OBJECTID ':' TYPEID 
@@ -204,16 +221,19 @@
       $$ = attr($1, $3, no_expr());
     }
     |
-    OBJECTID ':' TYPEID "<-" expression
+    OBJECTID ':' TYPEID ASSIGN expression
     {
       $$ = attr($1, $3, $5);
     }
+    ;
+
 
     formal_list
     : formal
     { $$ = single_Formals($1); }
     | formal_list ',' formal
     { $$ = append_Formals($1, single_Formals($3)); }
+    ;
 
     formal
     : OBJECTID ':' TYPEID { $$ = formal($1, $3); }
@@ -222,6 +242,7 @@
     : expression '@' TYPEID '.' OBJECTID '(' expression_list ')'{
       $$ = static_dispatch($1, $3, $5, $7);
     }
+    ;
 
     dispatch_exp
     : expression '.' OBJECTID '(' expression_list ')'{
@@ -230,6 +251,7 @@
     | OBJECTID '('expression_list')' {
       $$ = dispatch(object(stringtable.add_string("self")), $1, $3);
     }
+    ;
 
     expression_list
     : expression
@@ -238,29 +260,34 @@
     }
     | expression_list ',' expression
     { $$ = append_Expressions($1, single_Expressions($3)); }
+    ;
 
     if_stmt
-    :"if" expression "then" expression "else" expression "fi" {
+    : IF expression THEN expression ELSE expression FI {
       $$ = cond($2, $4, $6);
     }
+    ;
 
     while_loop
-    : "while" expression "loop" expression "pool"{
+    : WHILE expression LOOP expression POOL {
       $$ = loop($2, $4);
     }
+    ;
 
     block_stmt
-    : '{'expression_list'}' {
+    : '{' expression_list '}' {
       $$ = block($2);
     }
+    ;
 
     let_stmt
-    : "let" letsub{
+    : LET letsub{
       $$ = $2;
     }
+    ;
 
     letsub
-    :OBJECTID ':' TYPEID "<-" expression "in" expression {
+    :OBJECTID ':' TYPEID ASSIGN expression IN expression {
       $$ = let($1, $3, $5, $7);
     }
     |OBJECTID ':' TYPEID "in" expression {
@@ -272,26 +299,29 @@
     |OBJECTID ':' TYPEID ',' letsub {
       $$ = let($1, $3, no_expr(), $5);
     }
+    ;
 
     case_stmt
-    :"case" expression "of" case_list "esac" {
+    :CASE expression OF case_list ESAC {
       $$ = typcase($2, $4);
     }
+    ;
 
     case_list
     : case
     { $$ = single_Cases($1); }
     | case_list ';' case
     { $$ = append_Cases($1, single_Cases($3)); }
+    ;
 
     case
-    : OBJECTID ':'  TYPEID "=>" expression {
+    : OBJECTID ':'  TYPEID DARROW expression {
       $$ = branch($1, $3, $5);
     }
+    ;
 
-    /* TODO : complete it*/
     expression
-    : OBJECTID "<-" expression 
+    : OBJECTID ASSIGN expression 
     {
        $$ = assign($1, $3); 
     }
@@ -305,19 +335,19 @@
     | "new" TYPEID {
       $$ = new_($2);
     }
-    | "isvoid" expression {
+    | ISVOID expression {
       $$ = isvoid($2);
     }
-    | expression "+" expression {
+    | expression '+' expression {
       $$ = plus($1,$3);
     }
-    | expression "-" expression {
+    | expression '-' expression {
       $$ = sub($1,$3);
     }
-    | expression "*" expression {
+    | expression '*' expression {
       $$ = mul($1,$3);
     }
-    | expression "/" expression {
+    | expression '/' expression {
       $$ = divide($1,$3);
     }
     | '~'expression {
@@ -336,7 +366,7 @@
     | "not" expression {
       $$ = neg($2);
     }
-    | '('expression')' {
+    | '(' expression ')' {
       $$ = $2;
     }
     | OBJECTID {
@@ -351,11 +381,7 @@
     | BOOL_CONST{
       $$ = bool_const($1);
     }
-
-
-    
-
-    
+    ;
     /* end of grammar */
     %%
     
