@@ -89,7 +89,7 @@
     %verbose
 
     /* Formatting semantic values.  */
-    %printer { fprintf (yyoutput, "%s()", $$->get_string());  } OBJECTID;
+    /* %printer { fprintf (yyoutput, "%s()", $$->get_string());  } OBJECTID; */
 
     /* A union of all the types that can be the result of parsing actions. */
     %union {
@@ -126,7 +126,7 @@
     %token <symbol>  STR_CONST 275 INT_CONST 276 
     %token <boolean> BOOL_CONST 277
     %token <symbol>  TYPEID 278 OBJECTID 279
-    %token ASSIGN 280 NOT 281 LE 282 ERROR 283
+    %token ASSIGN 280 NOT 281 LE 282 ERROR 283 LT 284
     
     /*  DON'T CHANGE ANYTHING ABOVE THIS LINE, OR YOUR PARSER WONT WORK       */
     /**************************************************************************/
@@ -249,8 +249,15 @@
     : expression '.' OBJECTID '(' expression_list ')'{
       $$ = dispatch($1, $3, $5);
     }
+    | expression '.' OBJECTID '(' ')'{
+      $$ = dispatch($1, $3, nil_Expressions());
+    }
     | OBJECTID '('expression_list')' {
       $$ = dispatch(object(stringtable.add_string("self")), $1, $3);
+    }
+    | OBJECTID '('  ')' {
+      $$ = dispatch(object(stringtable.add_string("self")), $1, 
+      nil_Expressions());
     }
     ;
 
@@ -362,9 +369,9 @@
     }
     | '~'expression {
 
-      $$ = comp($2);
+      $$ = neg($2);
     }
-    | expression LE expression {
+    | expression '<' expression {
       $$ = lt($1,$3);
     }
     | expression DARROW expression {
