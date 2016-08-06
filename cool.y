@@ -333,6 +333,13 @@
     |OBJECTID ':' TYPEID ',' letsub {
       $$ = let($1, $3, no_expr(), $5);
     }
+    | OBJECTID ':' TYPEID ASSIGN expression IN error {
+      yyerrok;
+    }
+
+    | OBJECTID ':' TYPEID ASSIGN error IN expression {
+      yyerrok;
+    }
     ;
 
     case_stmt
