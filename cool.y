@@ -253,6 +253,9 @@
     : expression '@' TYPEID '.' OBJECTID '(' expression_list ')'{
       $$ = static_dispatch($1, $3, $5, $7);
     }
+    | expression '@' TYPEID '.' OBJECTID '(' ')'{
+      $$ = static_dispatch($1, $3, $5, nil_Expressions());
+    }
     ;
 
     dispatch_exp
