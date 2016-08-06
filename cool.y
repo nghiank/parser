@@ -330,7 +330,7 @@
     |OBJECTID ':' TYPEID IN expression {
       $$ = let($1, $3, no_expr(), $5);
     }
-    |OBJECTID ':' TYPEID LE expression ',' letsub {
+    |OBJECTID ':' TYPEID ASSIGN expression ',' letsub {
       $$ = let($1, $3, $5, $7);
     }
     |OBJECTID ':' TYPEID ',' letsub {
