@@ -372,7 +372,7 @@
     | block_stmt
     | let_stmt
     | case_stmt
-    | "new" TYPEID {
+    | NEW TYPEID {
       $$ = new_($2);
     }
     | ISVOID expression {
