@@ -204,6 +204,13 @@
     { $$ = single_Features($1); }
     | feature_list feature ';'
     { $$ = append_Features($1,  single_Features($2)); }
+    | feature_list error ';'
+    {
+      yyerrok;
+    }
+    | error ';' {
+      yyerrok;
+    }
     ;
 
     feature
@@ -297,6 +304,10 @@
     block_stmt
     : '{' expression_lines '}' {
       $$ = block($2);
+    } 
+    | '{' error '}'
+    {
+      yyerrok;
     }
     ;
 
