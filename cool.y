@@ -200,6 +200,9 @@
     | CLASS TYPEID INHERITS error '{' feature_list '}' ';' {
       yyerrok;
     }
+    | CLASS TYPEID error TYPEID '{' feature_list '}' ';' {
+      yyerrok;
+    }
     ;
     
     feature_list
