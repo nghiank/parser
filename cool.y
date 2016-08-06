@@ -339,6 +339,9 @@
     :CASE expression OF case_list ESAC {
       $$ = typcase($2, $4);
     }
+    | CASE error OF case_list ESAC {
+      yyerrok;
+    }
     ;
 
     case_list
@@ -352,6 +355,9 @@
     : OBJECTID ':'  TYPEID DARROW expression ';' {
       $$ = branch($1, $3, $5);
     }
+    | OBJECTID ':'  TYPEID DARROW error ';' {
+      yyerrok;
+      }
     ;
 
     expression
