@@ -197,6 +197,9 @@
     | CLASS TYPEID INHERITS TYPEID '{'  '}' ';' {
       $$ = class_($2,$4,nil_Features(),stringtable.add_string(curr_filename));
     }
+    | CLASS TYPEID INHERITS error '{' feature_list '}' ';' {
+      yyerrok;
+    }
     ;
     
     feature_list
