@@ -419,8 +419,8 @@
     | expression '=' expression {
       $$ = eq($1,$3);
     }
-    | "not" expression {
-      $$ = neg($2);
+    | NOT expression {
+      $$ = comp($2);
     }
     | '(' expression ')' {
       $$ = $2;
