@@ -147,6 +147,7 @@
     %type <expression> static_dispatch_exp
     %type <expression> dispatch_exp
     %type <expressions> expression_list
+    %type <expressions> expression_lines
     %type <expression> if_stmt;
     %type <expression> while_loop;
     %type <expression> block_stmt;
@@ -253,6 +254,15 @@
     }
     ;
 
+    expression_lines
+    : expression ';'
+    {
+      $$ = single_Expressions($1);
+    }
+    | expression_lines expression ';'
+    { $$ = append_Expressions($1, single_Expressions($2)); }
+    ;
+
     expression_list
     : expression
     {
@@ -275,7 +285,7 @@
     ;
 
     block_stmt
-    : '{' expression_list '}' {
+    : '{' expression_lines '}' {
       $$ = block($2);
     }
     ;
@@ -290,10 +300,10 @@
     :OBJECTID ':' TYPEID ASSIGN expression IN expression {
       $$ = let($1, $3, $5, $7);
     }
-    |OBJECTID ':' TYPEID "in" expression {
+    |OBJECTID ':' TYPEID IN expression {
       $$ = let($1, $3, no_expr(), $5);
     }
-    |OBJECTID ':' TYPEID "<" expression ',' letsub {
+    |OBJECTID ':' TYPEID LE expression ',' letsub {
       $$ = let($1, $3, $5, $7);
     }
     |OBJECTID ':' TYPEID ',' letsub {
@@ -354,10 +364,10 @@
 
       $$ = comp($2);
     }
-    | expression '<' expression {
+    | expression LE expression {
       $$ = lt($1,$3);
     }
-    | expression "<=" expression {
+    | expression DARROW expression {
       $$ = leq($1,$3);
     }
     | expression '=' expression {
