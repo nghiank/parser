@@ -268,6 +268,9 @@
     }
     | expression_lines expression ';'
     { $$ = append_Expressions($1, single_Expressions($2)); }
+    | expression_lines error ';' {
+      yyerrok;
+    }
     ;
 
     expression_list
