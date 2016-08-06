@@ -262,6 +262,9 @@
     | OBJECTID '('expression_list')' {
       $$ = dispatch(object(stringtable.add_string("self")), $1, $3);
     }
+    | OBJECTID '('error')' {
+      yyerrok;
+    }
     | OBJECTID '('  ')' {
       $$ = dispatch(object(stringtable.add_string("self")), $1, 
       nil_Expressions());
