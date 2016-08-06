@@ -383,10 +383,10 @@
       $$ = object($1);
     }
     | INT_CONST {
-      $$ = object($1);
+      $$ = int_const($1);
     }
     | STR_CONST {
-      $$ = object($1);
+      $$ = string_const($1);
     }
     | BOOL_CONST{
       $$ = bool_const($1);
