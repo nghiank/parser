@@ -160,7 +160,7 @@
 
     %precedence "<-"
     %precedence NOT
-    %left '<' "<=" '='
+    %nonassoc '=' '<' "<="
     %left '-' '+'
     %left '*' '/'
     %precedence ISVOID
