@@ -342,14 +342,14 @@
     ;
 
     case_list
-    : case
+    : case 
     { $$ = single_Cases($1); }
-    | case_list ';' case
-    { $$ = append_Cases($1, single_Cases($3)); }
+    | case_list case 
+    { $$ = append_Cases($1, single_Cases($2)); }
     ;
 
     case
-    : OBJECTID ':'  TYPEID DARROW expression {
+    : OBJECTID ':'  TYPEID DARROW expression ';' {
       $$ = branch($1, $3, $5);
     }
     ;
